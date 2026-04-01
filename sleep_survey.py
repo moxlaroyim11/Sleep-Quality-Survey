@@ -14,9 +14,204 @@ MAX_SCORE: float = 72.0
 loaded_from_file: bool = False
 
 QUESTIONS: list = [
-    {"id": 1, "text": "How often do you sleep enough (7-8 hours)?", "options": [{"label": "Never", "score": 4}, {"label": "Rarely", "score": 3}, {"label": "Sometimes", "score": 2}, {"label": "Often", "score": 1}, {"label": "Always", "score": 0}]},
-    {"id": 2, "text": "How often do you go to bed late?", "options": [{"label": "Never", "score": 0}, {"label": "Rarely", "score": 1}, {"label": "Sometimes", "score": 2}, {"label": "Often", "score": 3}, {"label": "Always", "score": 4}]},
-    {"id": 3, "text": "How often do you use phone, computer, or other screens before sleeping?", "options": [{"label": "Never", "score": 0}, {"label": "Rarely", "score": 1}, {"label": "Sometimes", "score": 2}, {"label": "Often", "score": 3}, {"label": "Always", "score": 4}]}
+    {
+        "id": 1,
+        "text": "How often do you sleep enough (7-8 hours)?",
+        "options": [
+            {"label": "Never", "score": 4},
+            {"label": "Rarely", "score": 3},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 1},
+            {"label": "Always", "score": 0},
+        ],
+    },
+    {
+        "id": 2,
+        "text": "How often do you go to bed late?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 3,
+        "text": "How often do you use phone, computer, or other screens before sleeping?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 4,
+        "text": "Do you fall asleep within 30 minutes after going to bed?",
+        "options": [
+            {"label": "Never", "score": 4},
+            {"label": "Rarely", "score": 3},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 1},
+            {"label": "Always", "score": 0},
+        ],
+    },
+    {
+        "id": 5,
+        "text": "How often do you wake up while sleeping?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 6,
+        "text": "Can you sleep easily after waking up?",
+        "options": [
+            {"label": "Never", "score": 4},
+            {"label": "Rarely", "score": 3},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 1},
+            {"label": "Always", "score": 0},
+        ],
+    },
+    {
+        "id": 7,
+        "text": "Do you feel rested after waking up?",
+        "options": [
+            {"label": "Never", "score": 4},
+            {"label": "Rarely", "score": 3},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 1},
+            {"label": "Always", "score": 0},
+        ],
+    },
+    {
+        "id": 8,
+        "text": "Do you want to sleep more even if you slept many hours?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 9,
+        "text": "How often do you nap during the day?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 10,
+        "text": "Do you have trouble concentrating during the day due to lack of sleep?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 11,
+        "text": "Does lack of sleep make you irritated?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 12,
+        "text": "Do you fall asleep quickly when sitting quietly (during lectures) or riding in a car?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 13,
+        "text": "Do you have problems with memorisation because of poor sleep?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 14,
+        "text": "Does poor sleep affect your ability to think properly?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 15,
+        "text": "Do you have headaches after waking up or during the day?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 16,
+        "text": "Has anyone ever noticed you snoring or gasping during sleep?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 17,
+        "text": "Does anyone notice your arms or legs moving while you sleep?",
+        "options": [
+            {"label": "Never", "score": 0},
+            {"label": "Rarely", "score": 1},
+            {"label": "Sometimes", "score": 2},
+            {"label": "Often", "score": 3},
+            {"label": "Always", "score": 4},
+        ],
+    },
+    {
+        "id": 18,
+        "text": "How long have you had problems with your sleep?",
+        "options": [
+            {"label": "I have no sleep problems", "score": 0},
+            {"label": "Less than 1 month", "score": 1},
+            {"label": "1 to 6 months", "score": 2},
+            {"label": "6 months to 1 year", "score": 3},
+            {"label": "More than 1 year", "score": 4},
+        ],
+    },
 ]
 
 SCORING: tuple = (
@@ -188,3 +383,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
