@@ -410,22 +410,20 @@ def main() -> None:
     # MODE 1: NEW SURVEY
     # ═══════════════════════════════════════════
 
-    # Load questions from uploaded JSON or use embedded
-    st.markdown("### 📋 Question Source")
-    use_file: bool = st.checkbox("Load questions from an external questions.json file")
+    # Load questions from questions.json if it exists next to app.py, else use embedded
     questions: list = QUESTIONS  # default: embedded
+    json_path: str = os.path.join(os.getcwd(), "questions.json")
 
-    if use_file:
-        q_file = st.file_uploader("Upload questions.json", type=["json"])
-        if q_file is not None:
-            try:
-                data: dict = json.loads(q_file.read().decode("utf-8"))
-                questions = data.get("questions", QUESTIONS)
-                st.success(f"✅ Loaded {len(questions)} questions from file.")
-            except (json.JSONDecodeError, KeyError):
-                st.warning("⚠️ Could not parse file. Using embedded questions.")
-        else:
-            st.info("No file uploaded yet — using embedded questions.")
+    if os.path.isfile(json_path):
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data: dict = json.load(f)
+            questions = data.get("questions", QUESTIONS)
+            st.info(f"📋 Questions loaded from questions.json ({len(questions)} questions).")
+        except (json.JSONDecodeError, KeyError):
+            st.warning("⚠️ Could not parse questions.json — using embedded questions.")
+    else:
+        st.info("📋 Using embedded questions.")
 
     st.markdown("---")
 
