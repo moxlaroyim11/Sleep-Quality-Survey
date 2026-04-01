@@ -1,16 +1,20 @@
 """
 Sleep Quality and Well-being Survey
 Fundamentals of Programming - Project 1
+Web-based interface using Streamlit
 """
 
 import json
 import csv
 import re
 import os
-from datetime import datetime
+import io
+from datetime import datetime, date
+
+import streamlit as st
 
 # ─────────────────────────────────────────────
-# SURVEY DATA (embedded in code + loaded from file)
+# SURVEY DATA (embedded in code)
 # ─────────────────────────────────────────────
 
 QUESTIONS: list = [
@@ -215,339 +219,352 @@ QUESTIONS: list = [
 ]
 
 SCORING: list = [
-    {"min": 0,  "max": 10, "label": "Excellent Sleep Quality",
+    {"min": 0,  "max": 10, "label": "Excellent Sleep Quality",    "emoji": "🌟",
      "description": "Your sleep habits are excellent. Your psychological and physical well-being is well-supported. No intervention needed."},
-    {"min": 11, "max": 22, "label": "Good Sleep Quality",
+    {"min": 11, "max": 22, "label": "Good Sleep Quality",         "emoji": "✅",
      "description": "Your sleep is generally healthy with minor issues. Maintaining good sleep hygiene is recommended."},
-    {"min": 23, "max": 34, "label": "Moderate Sleep Issues",
+    {"min": 23, "max": 34, "label": "Moderate Sleep Issues",      "emoji": "🟡",
      "description": "You show moderate sleep disturbances that may be affecting your daily functioning. Consider improving your sleep routine."},
-    {"min": 35, "max": 46, "label": "Poor Sleep Quality",
+    {"min": 35, "max": 46, "label": "Poor Sleep Quality",         "emoji": "🟠",
      "description": "Your sleep quality is poor and is likely impacting your mood, concentration, and energy. Lifestyle changes are advisable."},
-    {"min": 47, "max": 58, "label": "Significant Sleep Disorder",
+    {"min": 47, "max": 58, "label": "Significant Sleep Disorder", "emoji": "🔴",
      "description": "You are experiencing significant sleep problems affecting your psychological well-being. Consulting a healthcare professional is recommended."},
-    {"min": 59, "max": 66, "label": "Severe Sleep Deprivation",
+    {"min": 59, "max": 66, "label": "Severe Sleep Deprivation",   "emoji": "⚠️",
      "description": "Your sleep deprivation is severe and poses a serious risk to your mental and physical health. Please seek professional medical advice promptly."},
-    {"min": 67, "max": 72, "label": "Critical Sleep Crisis",
+    {"min": 67, "max": 72, "label": "Critical Sleep Crisis",      "emoji": "🚨",
      "description": "You are in a critical state of sleep dysfunction. Immediate consultation with a medical or psychological professional is strongly advised."},
 ]
 
 # ─────────────────────────────────────────────
-# INPUT VALIDATION FUNCTIONS
+# VALIDATION FUNCTIONS
 # ─────────────────────────────────────────────
 
 def validate_name(name: str) -> bool:
     """Validate that name contains only letters, hyphens, apostrophes, spaces."""
-    pattern = r"^[a-zA-Z][a-zA-Z\s\-']*$"
+    pattern: str = r"^[a-zA-Z][a-zA-Z\s\-']*$"
     return bool(re.match(pattern, name.strip())) and len(name.strip()) >= 2
 
 
-def validate_date_of_birth(dob: str) -> bool:
-    """Validate date of birth in DD/MM/YYYY format."""
-    try:
-        date = datetime.strptime(dob.strip(), "%d/%m/%Y")
-        # Must be in the past and not too far back
-        if date >= datetime.now():
-            return False
-        if date.year < 1900:
-            return False
-        return True
-    except ValueError:
-        return False
-
-
 def validate_student_id(student_id: str) -> bool:
-    """Validate that student ID contains only digits."""
+    """Validate that student ID contains only digits and is at least 4 chars."""
     return student_id.strip().isdigit() and len(student_id.strip()) >= 4
 
 
 # ─────────────────────────────────────────────
-# SURVEY LOGIC FUNCTIONS
+# SCORING FUNCTION
 # ─────────────────────────────────────────────
 
 def get_result(total_score: int) -> dict:
-    """Return the scoring band that matches the total score."""
+    """Return the scoring band matching the total score."""
     for band in SCORING:
         if band["min"] <= total_score <= band["max"]:
             return band
-    return SCORING[-1]  # fallback to last band
-
-
-def run_survey(questions: list) -> tuple:
-    """
-    Ask each survey question and collect answers.
-    Returns (total_score, answers_list).
-    """
-    total_score: int = 0
-    answers: list = []
-
-    print("\n" + "=" * 60)
-    print("       SLEEP QUALITY AND WELL-BEING SURVEY")
-    print("=" * 60)
-    print("For each question, enter the number of your answer.\n")
-
-    for q in questions:
-        print(f"\nQ{q['id']}. {q['text']}")
-        opts = q["options"]
-        for i, opt in enumerate(opts, start=1):
-            print(f"  {i}. {opt['label']}")
-
-        # While loop for input validation
-        while True:
-            choice = input("Your answer (enter number): ").strip()
-            if choice.isdigit() and 1 <= int(choice) <= len(opts):
-                break
-            print(f"  [!] Please enter a number between 1 and {len(opts)}.")
-
-        chosen: dict = opts[int(choice) - 1]
-        total_score += chosen["score"]
-        answers.append({
-            "question_id": q["id"],
-            "question":    q["text"],
-            "answer":      chosen["label"],
-            "score":       chosen["score"],
-        })
-
-    return total_score, answers
-
-
-def collect_user_info() -> dict:
-    """Collect and validate user personal details."""
-    print("\n--- Personal Information ---")
-
-    # Surname - for loop used for retry counter feedback
-    surname: str = ""
-    for attempt in range(1, 6):
-        surname = input("Enter your surname: ").strip()
-        if validate_name(surname):
-            break
-        print(f"  [!] Invalid surname. Only letters, hyphens, apostrophes and spaces allowed. (Attempt {attempt}/5)")
-    else:
-        print("Too many invalid attempts. Exiting.")
-        exit()
-
-    # Given name
-    given_name: str = ""
-    for attempt in range(1, 6):
-        given_name = input("Enter your given name: ").strip()
-        if validate_name(given_name):
-            break
-        print(f"  [!] Invalid name. Only letters, hyphens, apostrophes and spaces allowed. (Attempt {attempt}/5)")
-    else:
-        print("Too many invalid attempts. Exiting.")
-        exit()
-
-    # Date of birth - while loop validation
-    dob: str = ""
-    while True:
-        dob = input("Date of birth (DD/MM/YYYY): ").strip()
-        if validate_date_of_birth(dob):
-            break
-        print("  [!] Invalid date. Use DD/MM/YYYY format and a valid past date.")
-
-    # Student ID - while loop validation
-    student_id: str = ""
-    while True:
-        student_id = input("Student ID (digits only): ").strip()
-        if validate_student_id(student_id):
-            break
-        print("  [!] Invalid student ID. Only digits are allowed (minimum 4 digits).")
-
-    return {
-        "surname":    surname,
-        "given_name": given_name,
-        "dob":        dob,
-        "student_id": student_id,
-    }
+    return SCORING[-1]
 
 
 # ─────────────────────────────────────────────
-# FILE PERSISTENCE FUNCTIONS
+# FILE GENERATION FUNCTIONS
 # ─────────────────────────────────────────────
 
-def save_results(user_info: dict, total_score: int, result: dict, answers: list) -> None:
-    """Offer to save results in TXT, CSV, or JSON format."""
-    print("\n--- Save Results ---")
-    print("Would you like to save your results?")
-    print("  1. TXT")
-    print("  2. CSV")
-    print("  3. JSON")
-    print("  4. Do not save")
+def generate_txt(user_info: dict, total_score: int, result: dict, answers: list) -> str:
+    """Generate TXT content as a string."""
+    timestamp: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    lines: list = [
+        "SLEEP QUALITY AND WELL-BEING SURVEY - RESULTS",
+        "=" * 50,
+        f"Name:          {user_info['given_name']} {user_info['surname']}",
+        f"Date of Birth: {user_info['dob']}",
+        f"Student ID:    {user_info['student_id']}",
+        f"Date/Time:     {timestamp}",
+        f"Total Score:   {total_score} / 72",
+        f"Result:        {result['label']}",
+        f"Description:   {result['description']}",
+        "",
+        "--- Answers ---",
+    ]
+    for ans in answers:
+        lines.append(f"Q{ans['question_id']}. {ans['question']}")
+        lines.append(f"   Answer: {ans['answer']} (score: {ans['score']})")
+    return "\n".join(lines)
 
-    choice: str = ""
-    while True:
-        choice = input("Choose (1-4): ").strip()
-        if choice in {"1", "2", "3", "4"}:
-            break
-        print("  [!] Please enter 1, 2, 3, or 4.")
 
-    if choice == "4":
-        print("Results not saved.")
-        return
-
-    filename: str = f"{user_info['student_id']}_sleep_survey"
-    timestamp: str = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Build a flat record dict for CSV/TXT
-    record: dict = {
-        "surname":    user_info["surname"],
-        "given_name": user_info["given_name"],
-        "dob":        user_info["dob"],
-        "student_id": user_info["student_id"],
-        "total_score": total_score,
-        "result_label": result["label"],
+def generate_csv(user_info: dict, total_score: int, result: dict, answers: list) -> str:
+    """Generate CSV content as a string."""
+    timestamp: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    output: io.StringIO = io.StringIO()
+    fieldnames: list = [
+        "surname", "given_name", "dob", "student_id",
+        "total_score", "result_label", "result_description", "timestamp"
+    ]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerow({
+        "surname":            user_info["surname"],
+        "given_name":         user_info["given_name"],
+        "dob":                user_info["dob"],
+        "student_id":         user_info["student_id"],
+        "total_score":        total_score,
+        "result_label":       result["label"],
         "result_description": result["description"],
-        "timestamp": timestamp,
+        "timestamp":          timestamp,
+    })
+    return output.getvalue()
+
+
+def generate_json(user_info: dict, total_score: int, result: dict, answers: list) -> str:
+    """Generate JSON content as a string."""
+    timestamp: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    record: dict = {
+        "surname":            user_info["surname"],
+        "given_name":         user_info["given_name"],
+        "dob":                user_info["dob"],
+        "student_id":         user_info["student_id"],
+        "total_score":        total_score,
+        "result_label":       result["label"],
+        "result_description": result["description"],
+        "timestamp":          timestamp,
+        "answers":            answers,
     }
-
-    if choice == "1":
-        filepath: str = f"{filename}.txt"
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write("SLEEP QUALITY AND WELL-BEING SURVEY - RESULTS\n")
-            f.write("=" * 50 + "\n")
-            f.write(f"Name:        {user_info['given_name']} {user_info['surname']}\n")
-            f.write(f"Date of Birth: {user_info['dob']}\n")
-            f.write(f"Student ID:  {user_info['student_id']}\n")
-            f.write(f"Date/Time:   {timestamp}\n")
-            f.write(f"Total Score: {total_score}\n")
-            f.write(f"Result:      {result['label']}\n")
-            f.write(f"Description: {result['description']}\n")
-            f.write("\n--- Answers ---\n")
-            for ans in answers:
-                f.write(f"Q{ans['question_id']}. {ans['question']}\n")
-                f.write(f"   Answer: {ans['answer']} (score: {ans['score']})\n")
-        print(f"Results saved to '{filepath}'.")
-
-    elif choice == "2":
-        filepath: str = f"{filename}.csv"
-        fieldnames: list = list(record.keys())
-        # Check if file already exists to write header only once
-        file_exists: bool = os.path.isfile(filepath)
-        with open(filepath, "a", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(record)
-        print(f"Results saved to '{filepath}'.")
-
-    elif choice == "3":
-        filepath: str = f"{filename}.json"
-        full_record: dict = {**record, "answers": answers}
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(full_record, f, indent=2, ensure_ascii=False)
-        print(f"Results saved to '{filepath}'.")
+    return json.dumps(record, indent=2, ensure_ascii=False)
 
 
-def load_results() -> None:
-    """Load and display a previously saved result file."""
-    filename: str = input("Enter the filename to load (with extension): ").strip()
+# ─────────────────────────────────────────────
+# LOAD RESULTS FROM UPLOADED FILE
+# ─────────────────────────────────────────────
 
-    if not os.path.isfile(filename):
-        print(f"  [!] File '{filename}' not found.")
-        return
-
+def show_loaded_results(uploaded_file) -> None:
+    """Parse and display results from an uploaded TXT, CSV, or JSON file."""
+    filename: str = uploaded_file.name
     ext: str = filename.lower().rsplit(".", 1)[-1]
+    content: str = uploaded_file.read().decode("utf-8")
+
+    st.subheader("📂 Loaded Results")
 
     if ext == "txt":
-        with open(filename, "r", encoding="utf-8") as f:
-            print("\n" + f.read())
+        st.text(content)
 
     elif ext == "csv":
-        with open(filename, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            rows: list = list(reader)
+        reader = csv.DictReader(io.StringIO(content))
+        rows: list = list(reader)
         if not rows:
-            print("  [!] CSV file is empty.")
+            st.error("CSV file is empty.")
             return
-        print("\n--- Survey Results (CSV) ---")
         for row in rows:
             for key, val in row.items():
-                print(f"  {key}: {val}")
-            print()
+                st.write(f"**{key}:** {val}")
 
     elif ext == "json":
-        with open(filename, "r", encoding="utf-8") as f:
-            data: dict = json.load(f)
-        print("\n--- Survey Results (JSON) ---")
-        print(f"  Name:        {data.get('given_name')} {data.get('surname')}")
-        print(f"  Student ID:  {data.get('student_id')}")
-        print(f"  Total Score: {data.get('total_score')}")
-        print(f"  Result:      {data.get('result_label')}")
-        print(f"  Description: {data.get('result_description')}")
+        data: dict = json.loads(content)
+        st.write(f"**Name:** {data.get('given_name')} {data.get('surname')}")
+        st.write(f"**Date of Birth:** {data.get('dob')}")
+        st.write(f"**Student ID:** {data.get('student_id')}")
+        st.write(f"**Total Score:** {data.get('total_score')} / 72")
+        st.write(f"**Result:** {data.get('result_label')}")
+        st.write(f"**Description:** {data.get('result_description')}")
         answers: list = data.get("answers", [])
         if answers:
-            print("\n  Answers:")
+            st.markdown("---")
+            st.write("**Answers:**")
             for ans in answers:
-                print(f"    Q{ans['question_id']}. {ans['answer']} (score: {ans['score']})")
+                st.write(f"Q{ans['question_id']}. {ans['question']}  →  *{ans['answer']}* (score: {ans['score']})")
     else:
-        print("  [!] Unsupported file format. Use .txt, .csv, or .json.")
+        st.error("Unsupported file format. Please upload a .txt, .csv, or .json file.")
 
 
 # ─────────────────────────────────────────────
-# MAIN PROGRAM
+# STREAMLIT APP
 # ─────────────────────────────────────────────
 
 def main() -> None:
-    """Main entry point: lets user start a new survey or load existing results."""
-    print("\n" + "=" * 60)
-    print("   SLEEP QUALITY AND WELL-BEING SURVEY SYSTEM")
-    print("=" * 60)
-    print("\nWhat would you like to do?")
-    print("  1. Start a new survey")
-    print("  2. Load existing results from a file")
+    st.set_page_config(
+        page_title="Sleep Quality Survey",
+        page_icon="😴",
+        layout="centered",
+    )
 
-    # While loop for menu selection validation
-    choice: str = ""
-    while True:
-        choice = input("Enter 1 or 2: ").strip()
-        if choice in {"1", "2"}:
-            break
-        print("  [!] Please enter 1 or 2.")
+    st.title("😴 Sleep Quality and Well-being Survey")
+    st.caption("Fundamentals of Programming – Project 1")
+    st.markdown("---")
 
-    if choice == "2":
-        load_results()
-        return
+    # ── Top-level mode selection ──────────────────
+    mode: str = st.radio(
+        "What would you like to do?",
+        options=["Start a new survey", "Load existing results from a file"],
+        index=0,
+    )
 
-    # --- NEW SURVEY ---
-    # Try loading questions from external JSON file (bonus: both embedded + file)
+    # ═══════════════════════════════════════════
+    # MODE 2: LOAD EXISTING RESULTS
+    # ═══════════════════════════════════════════
+    if mode == "Load existing results from a file":
+        st.markdown("### 📂 Load Results")
+        uploaded = st.file_uploader(
+            "Upload your saved result file (.txt, .csv, or .json)",
+            type=["txt", "csv", "json"],
+        )
+        if uploaded is not None:
+            show_loaded_results(uploaded)
+        return  # stop here for load mode
+
+    # ═══════════════════════════════════════════
+    # MODE 1: NEW SURVEY
+    # ═══════════════════════════════════════════
+
+    # Load questions from uploaded JSON or use embedded
+    st.markdown("### 📋 Question Source")
+    use_file: bool = st.checkbox("Load questions from an external questions.json file")
     questions: list = QUESTIONS  # default: embedded
-    json_file: str = "questions.json"
-    if os.path.isfile(json_file):
-        try:
-            with open(json_file, "r", encoding="utf-8") as f:
-                data: dict = json.load(f)
-            questions = data.get("questions", QUESTIONS)
-            print(f"\n[Info] Questions loaded from '{json_file}'.")
-        except (json.JSONDecodeError, KeyError):
-            print(f"\n[Warning] Could not parse '{json_file}'. Using embedded questions.")
-    else:
-        print("\n[Info] Using embedded questions.")
 
-    # Collect user info with validation
-    user_info: dict = collect_user_info()
+    if use_file:
+        q_file = st.file_uploader("Upload questions.json", type=["json"])
+        if q_file is not None:
+            try:
+                data: dict = json.loads(q_file.read().decode("utf-8"))
+                questions = data.get("questions", QUESTIONS)
+                st.success(f"✅ Loaded {len(questions)} questions from file.")
+            except (json.JSONDecodeError, KeyError):
+                st.warning("⚠️ Could not parse file. Using embedded questions.")
+        else:
+            st.info("No file uploaded yet — using embedded questions.")
 
-    # Run the survey
-    total_score: int
-    answers: list
-    total_score, answers = run_survey(questions)
+    st.markdown("---")
 
-    # Determine result
-    result: dict = get_result(total_score)
+    # ── Personal Information ──────────────────
+    st.markdown("### 👤 Personal Information")
 
-    # Display result
-    print("\n" + "=" * 60)
-    print("                   YOUR RESULT")
-    print("=" * 60)
-    print(f"  Name:        {user_info['given_name']} {user_info['surname']}")
-    print(f"  Student ID:  {user_info['student_id']}")
-    print(f"  Total Score: {total_score} / 72")
-    print(f"  Result:      {result['label']}")
-    print(f"\n  {result['description']}")
-    print("=" * 60)
+    surname: str = st.text_input("Surname")
+    given_name: str = st.text_input("Given Name")
+    dob: date = st.date_input(
+        "Date of Birth",
+        value=date(2000, 1, 1),
+        min_value=date(1900, 1, 1),
+        max_value=date.today(),
+    )
+    student_id: str = st.text_input("Student ID (digits only)")
 
-    # Offer to save
-    save_results(user_info, total_score, result, answers)
+    # Validate fields live
+    name_errors: list = []
+    if surname and not validate_name(surname):
+        name_errors.append("Surname may only contain letters, hyphens, apostrophes and spaces.")
+    if given_name and not validate_name(given_name):
+        name_errors.append("Given name may only contain letters, hyphens, apostrophes and spaces.")
+    if student_id and not validate_student_id(student_id):
+        name_errors.append("Student ID must contain digits only (minimum 4 digits).")
 
-    print("\nThank you for completing the survey. Goodbye!\n")
+    for err in name_errors:
+        st.error(err)
+
+    st.markdown("---")
+
+    # ── Survey Questions ──────────────────────
+    st.markdown("### 📝 Survey Questions")
+
+    # Store selected labels in a dict keyed by question id
+    selections: dict = {}
+    all_answered: bool = True
+
+    for q in questions:
+        labels: list = [opt["label"] for opt in q["options"]]
+        choice = st.radio(
+            f"**Q{q['id']}.** {q['text']}",
+            options=labels,
+            index=None,          # no default — forces user to pick
+            key=f"q_{q['id']}",
+        )
+        if choice is None:
+            all_answered = False
+        else:
+            selections[q["id"]] = choice
+
+    st.markdown("---")
+
+    # ── Submit ────────────────────────────────
+    if st.button("Submit Survey", type="primary"):
+
+        # Guard: personal info
+        if not surname or not given_name or not student_id:
+            st.error("Please fill in all personal information fields.")
+            return
+
+        if name_errors:
+            st.error("Please fix the validation errors in your personal information.")
+            return
+
+        # Guard: all questions answered
+        if not all_answered:
+            st.error("Please answer all questions before submitting.")
+            return
+
+        # Build answers list and calculate score
+        total_score: int = 0
+        answers: list = []
+        for q in questions:
+            chosen_label: str = selections[q["id"]]
+            # Find the score for the chosen label
+            chosen_opt: dict = next(opt for opt in q["options"] if opt["label"] == chosen_label)
+            total_score += chosen_opt["score"]
+            answers.append({
+                "question_id": q["id"],
+                "question":    q["text"],
+                "answer":      chosen_label,
+                "score":       chosen_opt["score"],
+            })
+
+        result: dict = get_result(total_score)
+
+        user_info: dict = {
+            "surname":    surname,
+            "given_name": given_name,
+            "dob":        dob.strftime("%d/%m/%Y"),
+            "student_id": student_id,
+        }
+
+        # ── Display Result ────────────────────
+        st.markdown("---")
+        st.markdown("## 🏆 Your Result")
+        st.markdown(f"**Name:** {given_name} {surname}")
+        st.markdown(f"**Student ID:** {student_id}")
+        st.markdown(f"**Date of Birth:** {dob.strftime('%d/%m/%Y')}")
+        st.markdown(f"**Total Score:** {total_score} / 72")
+
+        st.markdown(f"### {result['emoji']} {result['label']}")
+        st.info(result["description"])
+
+        # Score progress bar (0–72)
+        st.progress(total_score / 72)
+
+        # ── Download Section ──────────────────
+        st.markdown("---")
+        st.markdown("### 💾 Save Your Results")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            txt_content: str = generate_txt(user_info, total_score, result, answers)
+            st.download_button(
+                label="⬇️ Download TXT",
+                data=txt_content,
+                file_name=f"{student_id}_sleep_survey.txt",
+                mime="text/plain",
+            )
+
+        with col2:
+            csv_content: str = generate_csv(user_info, total_score, result, answers)
+            st.download_button(
+                label="⬇️ Download CSV",
+                data=csv_content,
+                file_name=f"{student_id}_sleep_survey.csv",
+                mime="text/csv",
+            )
+
+        with col3:
+            json_content: str = generate_json(user_info, total_score, result, answers)
+            st.download_button(
+                label="⬇️ Download JSON",
+                data=json_content,
+                file_name=f"{student_id}_sleep_survey.json",
+                mime="application/json",
+            )
 
 
 if __name__ == "__main__":
