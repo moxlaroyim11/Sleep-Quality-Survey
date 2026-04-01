@@ -13,9 +13,8 @@ from datetime import datetime, date
 
 import streamlit as st
 
-# ─────────────────────────────────────────────
-# SURVEY DATA (embedded in code)
-# ─────────────────────────────────────────────
+
+
 
 QUESTIONS: list = [
     {
@@ -235,10 +234,6 @@ SCORING: list = [
      "description": "You are in a critical state of sleep dysfunction. Immediate consultation with a medical or psychological professional is strongly advised."},
 ]
 
-# ─────────────────────────────────────────────
-# VALIDATION FUNCTIONS
-# ─────────────────────────────────────────────
-
 def validate_name(name: str) -> bool:
     """Validate that name contains only letters, hyphens, apostrophes, spaces."""
     pattern: str = r"^[a-zA-Z][a-zA-Z\s\-']*$"
@@ -250,9 +245,6 @@ def validate_student_id(student_id: str) -> bool:
     return student_id.strip().isdigit() and len(student_id.strip()) >= 4
 
 
-# ─────────────────────────────────────────────
-# SCORING FUNCTION
-# ─────────────────────────────────────────────
 
 def get_result(total_score: int) -> dict:
     """Return the scoring band matching the total score."""
@@ -262,9 +254,6 @@ def get_result(total_score: int) -> dict:
     return SCORING[-1]
 
 
-# ─────────────────────────────────────────────
-# FILE GENERATION FUNCTIONS
-# ─────────────────────────────────────────────
 
 def generate_txt(user_info: dict, total_score: int, result: dict, answers: list) -> str:
     """Generate TXT content as a string."""
@@ -328,9 +317,7 @@ def generate_json(user_info: dict, total_score: int, result: dict, answers: list
     return json.dumps(record, indent=2, ensure_ascii=False)
 
 
-# ─────────────────────────────────────────────
-# LOAD RESULTS FROM UPLOADED FILE
-# ─────────────────────────────────────────────
+
 
 def show_loaded_results(uploaded_file) -> None:
     """Parse and display results from an uploaded TXT, CSV, or JSON file."""
@@ -371,9 +358,6 @@ def show_loaded_results(uploaded_file) -> None:
         st.error("Unsupported file format. Please upload a .txt, .csv, or .json file.")
 
 
-# ─────────────────────────────────────────────
-# STREAMLIT APP
-# ─────────────────────────────────────────────
 
 def main() -> None:
     st.set_page_config(
@@ -386,16 +370,14 @@ def main() -> None:
     st.caption("Fundamentals of Programming – Project 1")
     st.markdown("---")
 
-    # ── Top-level mode selection ──────────────────
+
     mode: str = st.radio(
         "What would you like to do?",
         options=["Start a new survey", "Load existing results from a file"],
         index=0,
     )
 
-    # ═══════════════════════════════════════════
-    # MODE 2: LOAD EXISTING RESULTS
-    # ═══════════════════════════════════════════
+
     if mode == "Load existing results from a file":
         st.markdown("### 📂 Load Results")
         uploaded = st.file_uploader(
@@ -406,13 +388,8 @@ def main() -> None:
             show_loaded_results(uploaded)
         return  # stop here for load mode
 
-    # ═══════════════════════════════════════════
-    # MODE 1: NEW SURVEY
-    # ═══════════════════════════════════════════
+ 
 
-    # Load questions from questions.json if it exists next to app.py, else use embedded
-    questions: list = QUESTIONS  # default: embedded
-    json_path: str = os.path.join(os.getcwd(), "questions.json")
 
     if os.path.isfile(json_path):
         try:
@@ -427,7 +404,7 @@ def main() -> None:
 
     st.markdown("---")
 
-    # ── Personal Information ──────────────────
+ 
     st.markdown("### 👤 Personal Information")
 
     surname: str = st.text_input("Surname")
@@ -440,7 +417,6 @@ def main() -> None:
     )
     student_id: str = st.text_input("Student ID (digits only)")
 
-    # Validate fields live
     name_errors: list = []
     if surname and not validate_name(surname):
         name_errors.append("Surname may only contain letters, hyphens, apostrophes and spaces.")
@@ -454,10 +430,10 @@ def main() -> None:
 
     st.markdown("---")
 
-    # ── Survey Questions ──────────────────────
+
     st.markdown("### 📝 Survey Questions")
 
-    # Store selected labels in a dict keyed by question id
+
     selections: dict = {}
     all_answered: bool = True
 
@@ -476,10 +452,10 @@ def main() -> None:
 
     st.markdown("---")
 
-    # ── Submit ────────────────────────────────
+
     if st.button("Submit Survey", type="primary"):
 
-        # Guard: personal info
+  
         if not surname or not given_name or not student_id:
             st.error("Please fill in all personal information fields.")
             return
@@ -488,12 +464,12 @@ def main() -> None:
             st.error("Please fix the validation errors in your personal information.")
             return
 
-        # Guard: all questions answered
+   
         if not all_answered:
             st.error("Please answer all questions before submitting.")
             return
 
-        # Build answers list and calculate score
+
         total_score: int = 0
         answers: list = []
         for q in questions:
@@ -517,7 +493,6 @@ def main() -> None:
             "student_id": student_id,
         }
 
-        # ── Display Result ────────────────────
         st.markdown("---")
         st.markdown("## 🏆 Your Result")
         st.markdown(f"**Name:** {given_name} {surname}")
@@ -528,10 +503,10 @@ def main() -> None:
         st.markdown(f"### {result['emoji']} {result['label']}")
         st.info(result["description"])
 
-        # Score progress bar (0–72)
+     
         st.progress(total_score / 72)
 
-        # ── Download Section ──────────────────
+   
         st.markdown("---")
         st.markdown("### 💾 Save Your Results")
 
